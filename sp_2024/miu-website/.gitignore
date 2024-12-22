@@ -1,0 +1,5 @@
+*.bin
+*.txt
+*.json
+*.npy
+*.model
