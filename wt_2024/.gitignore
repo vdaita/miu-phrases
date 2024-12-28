@@ -1,0 +1,6 @@
+*.txt
+*.model
+*.npy
+*.json
+keyword_charts/
+.env
