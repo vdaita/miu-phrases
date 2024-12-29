@@ -139,7 +139,7 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
         if keyword == "jobs":
             classification, _ = ask_llm_jobs(phrase)
         elif keyword == "antiforeign":
-            classification, _ = ask_llm_antiforeign(phrase)
+            classification, _ = ask_llm_anti_foreign(phrase)
         elif keyword == "labor":
             classification, _ = ask_llm_labor_fairness(phrase)
         elif keyword == "military":
@@ -200,7 +200,7 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
                         if False: 
                             classification = get_llm_response(keyword, phrases[j])
                         else:
-                            classification = "GORILLA"
+                            classification = "NOT RUNNING FOR NOW"
                             llm_prompt_count += 1
                             
                         # If classification is in the valid set, count it
@@ -238,6 +238,36 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
         # Print aggregate sum and save final
         print(df2.sum())
         df2.to_csv(f"theme_panel_data/prelim_{keyword}_panel.csv")
+        
+        
+        
+def ask_llm_made_in_america(phrase):
+    """
+    Sends a phrase to the OpenAI API to classify it as MADE-IN-AMERICA or NOT based on the context of promoting American manufacturing, products, or values.
+
+    Args:
+        phrase (str): The phrase to be classified.
+
+    Returns:
+        tuple: A tuple containing the classification result and the string "MADE-IN-AMERICA".
+    """
+    messages = [
+        {"role": "system", "content": """Classify the phrase as the following: MADE-IN-AMERICA, NOT.
+        The phrase should be classified as MADE-IN-AMERICA if it explicitly or implicitly refers to supporting or prioritizing American-made products, encouraging the purchase of American goods, highlighting American manufacturing, workers, or businesses, or emphasizing national pride, patriotism, or values tied to domestic production.
+        The phrase should be classified as NOT if it does not align with the themes of American manufacturing, products, or patriotic values tied to domestic production.
+        """},
+        
+        {"role": "user", "content": "Phrase: " + phrase},
+    ]
+        
+    response = model.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        max_tokens=100,
+        temperature=0.1
+    )
+
+    return response.choices[0].message.content, "MADE-IN-AMERICA"
 
 
 
@@ -270,51 +300,32 @@ def ask_llm_jobs(phrase):
     return response.choices[0].message.content, "GENERAL"
 
 
-def ask_llm_antiforeign(phrase):
+def ask_llm_anti_foreign(phrase):
     """
-    Sends a phrase to the OpenAI API to classify it based on the context of manufacturing location as US, FOREIGN, NEITHER, or UNSURE.
+    Sends a phrase to the OpenAI API to classify it as ANTI-FOREIGN or NOT based on the context.
 
     Args:
         phrase (str): The phrase to be classified.
 
     Returns:
-        tuple: A tuple containing the classification result and the string "FOREIGN".
+        tuple: A tuple containing the classification result and the string "ANTI-FOREIGN".
     """
     messages = [
-        {"role": "system", "content": """Classify the following phrase as either: US, FOREIGN, NEITHER, or UNSURE. 
-        The phrase should be classified as US if it refers solely to products being made in the United States. 
-        The phrase should be classified as FOREIGN if it refers to goods that are being made abroad (both positively and negatively). 
-        FOREIGN phrases can include references to products being manufactured in the United States, but must include a foreign component.
-        The phrase should be classified as NEITHER if it doesn't refer to a location of manufacture or is miscellaneous.
-        The phrase should be classified as UNSURE if you are unsure about which category it belongs in.
-        
-        Some examples of FOREIGN phrases are:
-        1. "our small workshop in pennsylvania. made in china mass produced in a crowded chinese factory without any love or expertise."
-        2. "of the 3-4 months typically required when importing from china. small batch customization is a service that is somewhat unique"
-        3. "cheap imports, we take pride in creating quality handmade leather goods using full grain leather. our handmade buffalo leather goods"
-        4. "corporations continue to rely on manufactures overseas because they can produce a lower cost product by using sweatshop labor (even"
-        5. "39 years. in a time when ruthlessly cheap imports flood the market, we strive to make a product that is"
-
-        Some examples of US phrases are:
-        1. "quality denim and fabrics from our mill partners in usa, italy and japan a family company based in new york"
-            Explanation: This is describing their partner locations in a neutrals tone, not anti foreign. Usually anti foreign is targeting developing    countries, or just "foreign" imports in general. So there is a strong discriminatory element there.
-        2. "are now made back in france. brand a - z | brand z - a | price low - high"
-        3. "our global presence and robust delivery capabilities allow us to efficiently meet region-specific production needs, anywhere in the world. locations" This one is actually saying our global presence is a good thing, so it's the opposite idea.
-        4. "we are working diligently to produce and ship quality bb simon products around the world, as efficiently as possible. we" Similar as 3. They are say we sell globally, which is a strength, so not bashing foreign products or bashing globalization.
-        5. "internationally. we have a diversified range of innovative and quality products for consumer, plumbing, healthcare and oem/contract markets. you may"
-        6. "research and development, manufacturing, and assembly operations in belgium, brazil, china, hungary, india, italy, mexico, the united kingdom, and the"
-        
+        {"role": "system", "content": """Classify the following phrase as either: ANTI-FOREIGN, NOT. 
+        The phrase should be classified as ANTI-FOREIGN if it describes ideas such as opposition to hiring foreign workers, claims that foreigners take jobs, or expressions of anti-immigration sentiments.
+        The phrase should be classified as NOT if it does not contain these ideas.
         """},
-
+        
         {"role": "user", "content": "Phrase: " + phrase},
     ]
         
     response = model.chat.completions.create(
-        model="gpt-4-0125-preview",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
     )
+
     return response.choices[0].message.content, "FOREIGN"
 
 
@@ -330,7 +341,7 @@ def ask_llm_labor_fairness(phrase):
     """
     messages = [
         {"role": "system", "content": """Classify the following phrase as either: FAIRNESS, NOT. 
-        The phrase should be classified as FAIRNESS if it describes ideas such as: "we pay a fair wage", "a decent wage to american workers", "they have good work conditions", etc.
+        The phrase should be classified as FAIRNESS if it describes ideas such as paying a fair wage, offering decent wages to American workers, or providing good working conditions, among other related concepts.
         The phrase should be classified as NOT if it does not.
         """},
         
@@ -338,7 +349,7 @@ def ask_llm_labor_fairness(phrase):
     ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
@@ -359,7 +370,7 @@ def ask_llm_military(phrase):
     """
     messages = [
         {"role": "system", "content": """Classify the phrase as the following: MILITARY, NOT.
-        The phrase should be classified as MILITARY if it explicitly states support for our military, law enforcement, and other public enforcement workers.
+        The phrase should be classified as MILITARY if it explicitly states support for The United State's military, law enforcement, and other public enforcement workers.
         The phrase should be classified as NOT if it does not.
         """},
         
@@ -367,7 +378,7 @@ def ask_llm_military(phrase):
     ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
