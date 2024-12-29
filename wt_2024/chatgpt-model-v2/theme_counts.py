@@ -296,7 +296,7 @@ def ask_llm_jobs(phrase):
     ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
@@ -412,7 +412,7 @@ def ask_llm_pride(phrase):
     ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
@@ -441,7 +441,7 @@ def ask_llm_quality(phrase):
     ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
@@ -471,7 +471,7 @@ def ask_llm_revival(phrase):
         ]
         
     response = model.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=100,
         temperature=0.1
