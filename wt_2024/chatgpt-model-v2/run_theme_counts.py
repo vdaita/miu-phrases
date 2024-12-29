@@ -26,6 +26,18 @@ def main():
         "revival": ["make america great again", "MAGA", "american manufacturing", "reshoring manufacturing", "boosting america", "america first"]
     }
     
+    phrases_for_extraction = {"Made in america": [
+        "made in america", "made in usa", "american made",
+        "buy american", "support america", "patriot",
+        "choose american", "national pride",
+        "usa based", "usa produced", "usa manufactured",
+        "american worker", "american job",
+        "veteran owned", "handcrafted in america",
+        "america heritage", "america tradition", "america value",
+        "icon of america", "america manufacturer"
+    ]}
+
+    
     df = pd.read_csv(r"C:\Users\theal\PycharmProjects\miu-phrases\sp_2024\chatgpt-model\v2\company_website_second_round_with_additional_firms.csv", low_memory=True, index_col=[0], nrows=10)
     df = df.drop(columns=[col for col in df.columns if col.startswith('Unnamed:')])
     print("Loaded data")
