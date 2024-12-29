@@ -158,6 +158,7 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
     # 3) Loop over each keyword and its associated list of phrases
     for keyword, existing_phrases in phrases_for_extraction.items():
         print(f"Current keyword being processed: {keyword}")
+        collected_phrases = []
 
         # Embed the loaded (existing) phrases for the current keyword
         existing_embedded = embeddings_model.encode(existing_phrases, convert_to_tensor=True)
@@ -206,6 +207,7 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
                         # If classification is in the valid set, count it
                         if classification in valid_classifications_dict.get(keyword, set()):
                             phrase_count += 1
+                            collected_phrases.append(phrases[j])
                         # Break so we do not double count the same text-phrase
                         break
 
@@ -239,6 +241,9 @@ def process_keywords(phrases_for_extraction, embeddings_model, df, cosine_simila
         print(df2.sum())
         df2.to_csv(f"theme_panel_data/prelim_{keyword}_panel.csv")
         
+        with open(f"phrase_data/{keyword}_phrases.txt", "w", encoding="utf-8") as f:
+            for p in collected_phrases:
+                f.write(p + "\n")
         
         
 def ask_llm_made_in_america(phrase):
