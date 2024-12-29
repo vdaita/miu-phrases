@@ -317,7 +317,10 @@ def ask_llm_anti_foreign(phrase):
     """
     messages = [
         {"role": "system", "content": """Classify the following phrase as either: ANTI-FOREIGN, NOT. 
-        The phrase should be classified as ANTI-FOREIGN if it describes ideas such as opposition to hiring foreign workers, claims that foreigners take jobs, or expressions of anti-immigration sentiments.
+        The phrase should be classified as ANTI-FOREIGN if it reflects opposition to foreign workers, imports, goods, 
+        or cultural influences. Examples include rejecting foreign products, claiming foreign goods are inferior, 
+        or expressing concerns about foreign cultural impact.
+        
         The phrase should be classified as NOT if it does not contain these ideas.
         """},
         
@@ -332,6 +335,7 @@ def ask_llm_anti_foreign(phrase):
     )
 
     return response.choices[0].message.content, "FOREIGN"
+
 
 
 def ask_llm_labor_fairness(phrase):
