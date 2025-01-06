@@ -175,8 +175,18 @@ def graph_keywords(keywords, keyword_name):
     # %%
     columns = pd.to_datetime(list(df.columns)) # Going back to the original dataframe and getting the columns from there
     columns = list(columns) # Turning it from Pandas format to list format
+    json_columns = []
+    for column in columns:
+        json_columns.append(column.isoformat())
 
     print(len(columns), columns[:3])
+
+    save_data = {
+        "columns": json_columns,
+        "year_sums": list(year_sums)
+    }
+    with open(f'/Users/vijay/Documents/projects/research/takeda/miu-phrases/wt_2024/graph_data/{keyword_name}.json', 'w') as f:
+        json.dump(save_data, f)
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(8,6))
