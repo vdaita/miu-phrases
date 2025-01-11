@@ -16,6 +16,8 @@ def replace_patterns_with_spacy(text):
             new_text.append("[time]")
         elif token.is_stop:
             continue
+        elif len(token.text) > 12:
+            continue
         else:
             new_text.append(token.text)
     

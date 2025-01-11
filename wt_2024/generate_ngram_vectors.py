@@ -26,6 +26,7 @@ def remove_substrings(input_set):
 def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str = "seed_words.json", output_path_json: str = "generated_words.json", output_path_txt: str = "generated_words.txt"):
     model = Word2Vec.load(model_path)
     model = model.wv
+    print("Word2Vec model loaded")
 
     index = faiss.IndexFlatL2(384)
     client = OpenAI(
@@ -37,9 +38,12 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
     ngram_embeddings = []
 
     # Load in the word_vectors and find the most similar ones
-    for ngram in model.vocab:
+    for ngram in model.key_to_index:
         ngrams.append(ngram)
         ngram_embeddings.append(model[ngram])
+
+    # print(ngram_embeddings)
+    
     index.add(np.array(ngram_embeddings))
 
 
@@ -72,7 +76,7 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
                 "content": """Select the 150 most relevant keywords that should be included in this. Response JSON format: {"sorted_keywords": ["bigram1", "bigram2", ...]}"""
             }, {
                 "role": "user",
-                "content": f"# Category: {category} sentiment from an American company \n\n# Bigrams:\n{json.dumps(similar_bigrams)}"
+                "content": f"# Category: {category} sentiment from an American company \n\n# Bigrams:\n{json.dumps(similar_ngrams)}"
             }],
             model="gpt-4o",
             # temperature=0.0,
