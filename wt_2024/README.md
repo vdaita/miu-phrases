@@ -1,10 +1,19 @@
 # Calculating related keyword using single words and bigrams
 
-## First, clean the compiled corpus text
+## Clean the compiled corpus text
 ```python clean_corpus.py```
 
-## Then, generate a word2vec model based on the cleaned text. 
+## Generate a word2vec model based on the cleaned text. 
+```python create_ngram_model.py```
 
 ## Then, generate the keywords (after stopwords removal and everything)
+```python generate_ngram_vectors.py```
 
-## then, remove the stopwords from the original docs and produce the counts
+## Remove redundancies in the CSV file
+```python clear_similar_from_csv.py```
+
+## Remove stopwords from the text in those CSV files
+```python remove_stopwords_from_csv.py```
+
+## Produce the counts and graphs
+```python generate_graphs.py```

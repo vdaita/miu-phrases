@@ -6,6 +6,7 @@ from functools import partial
 from tqdm import tqdm
 import json
 from fire import Fire
+from nltk.corpus import stopwords
 
 # df = pd.read_csv("about_us_second_round_with_additional_firms.csv", low_memory=False)
 
@@ -16,17 +17,15 @@ def graph_keywords(csv_filename, keywords, keyword_name):
     # %%
     df.drop(df.columns[:14], axis=1, inplace=True)
     df = df.loc[:, ~df.columns.str.contains('\.')]
-    df.head()
-
-    # %%
-    df.shape
-
     # %%
     columns = list(df.columns)
 
     # %%
     def count_keywords_in_cell(cell, keywords):
-        return sum(1 if keyword.lower() in str(cell).lower() else 0 for keyword in keywords)
+        if isinstance(cell, str):
+            return sum(1 if keyword.lower() in cell.lower() else 0 for keyword in keywords)
+        else:
+            return 0
 
     def calculate_total_counts(df, columns, keywords):
         total_counts_df = pd.DataFrame(index=df.index, columns=columns, dtype=int).fillna(0)
@@ -36,9 +35,8 @@ def graph_keywords(csv_filename, keywords, keyword_name):
             for col_idx, col in enumerate(reversed(columns)):
                 cell_value = row[col]
                 current_count = count_keywords_in_cell(cell_value, keywords)
-                
-                # If the current count is zero and the previous count is greater than zero, use the previous count
-                if current_count == 0 and previous_count > 0:
+                # If the current count is less than or equal to zero and the previous count is greater than zero, use the previous count
+                if current_count <= 0 and previous_count > 0:
                     total_counts_df.at[index, columns[len(columns) - 1 - col_idx]] = previous_count
                 else:
                     total_counts_df.at[index, columns[len(columns) - 1 - col_idx]] = current_count
@@ -49,18 +47,14 @@ def graph_keywords(csv_filename, keywords, keyword_name):
     # %%
     total_counts_df = calculate_total_counts(df, columns, keywords)
 
-    # %%
-    total_counts_df
 
     # %%
     document_counts = [0] * len(columns) # Initialize a list to hold the count of documents for each year.
 
     for row in df.itertuples(index=False):# Iterate over each row in the DataFrame.
         previous_count = 0 # Initialize the previous count to 0 for the first iteration.
-
         for idx in reversed(range(len(columns))):    # Iterate over the columns in reverse order to update the document count.
             value = row[idx] # Access the value using the appropriate index for itertuples() output.
-            
             # Check if the current cell has a document (non-NaN and not an empty string).
             if pd.isna(value) or isinstance(value, int):
                 document_counts[idx] += previous_count # If there's a document, increment the count for the year and set the previous count to 1.
@@ -71,8 +65,7 @@ def graph_keywords(csv_filename, keywords, keyword_name):
 
 
     total_documents = sum(document_counts)
-    document_count_sum = total_documents
-    print(total_documents)
+    print("Number of total documents: ", total_documents)
 
     term_count = {}
 
@@ -113,9 +106,6 @@ def graph_keywords(csv_filename, keywords, keyword_name):
         term_count.update(result)
 
     print(term_count)
-
-    # %%
-    import math
 
     def generate_final_value_by_year(data):
         keyword, term_existence = data
@@ -200,15 +190,16 @@ def graph_keywords(csv_filename, keywords, keyword_name):
     plt.savefig(f'.keyword_charts/{keyword_name}.png')
     # plt.show()
 
-def main(csv_filename: str, keywords_file: str):
+def main(csv_filename: str = "company_website_second_round_with_additional_firms_without_redundant_cleaned.csv", keywords_file: str = "generated_words.json"):
     with open(keywords_file) as f:
         keywords_original = json.load(f)
     keywords = {}
     for keyword_type in keywords_original:
-        for keyword_name, keyword_list in keyword_type.items():
+        for keyword_name, keyword_list in keywords_original[keyword_type].items():
             keywords[keyword_name + "_" + keyword_type] = keyword_list
+    
     with mp.Pool(mp.cpu_count()) as pool:
-        results = list(tqdm(pool.imap(partial(graph_keywords), [(csv_filename, keyword_list, keyword_name) for keyword_name, keyword_list in keywords.items()]), total=len(keywords)))
+        pool.starmap(graph_keywords, [(csv_filename, keyword_list, keyword_name) for keyword_name, keyword_list in keywords.items()])
 
 if __name__ == "__main__":
     Fire(main)

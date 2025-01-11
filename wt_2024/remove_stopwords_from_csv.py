@@ -19,17 +19,9 @@ def remove_stopwords_from_csv(file_path="company_website_second_round_with_addit
             return " ".join([token.text for token in doc if not token.is_stop])
         return text
 
-    # Iterate through each row in the DataFrame
-    def process_row(row):
-        for col in df.columns[14:]:
-            if pd.notna(row[col]):
-                row[col] = remove_stopwords(row[col])
-        return row
-
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        results = list(tqdm(executor.map(process_row, [row for _, row in df.iterrows()]), total=df.shape[0]))
-
-    df = pd.DataFrame(results)
+    # Apply the remove_stopwords function to every cell after the first 14 columns
+    for col in tqdm(df.columns):
+        df[col] = df[col].apply(remove_stopwords)
 
     # Save the cleaned DataFrame to a new CSV file
     df.to_csv(output_file_path, index=False)
