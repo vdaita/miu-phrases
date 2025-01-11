@@ -5,7 +5,7 @@ from fire import Fire
 def main(input_file: str = "corpus_cleaned.txt", output_file: str = "ngram_model.model", concept: str = "american"):
     with open(input_file, "r") as f:
         corpus = f.read().split(" ")
-    corpus = [" ".join(corpus[i:i+20]) for i in range(0, len(corpus), 20)]
+    corpus = [" ".join(corpus[i:i+30]) for i in range(0, len(corpus), 30)]
     corpus = [line.lower().split() for line in corpus]
 
     bigram = Phrases(corpus, min_count=5, threshold=10)

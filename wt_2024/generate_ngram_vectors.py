@@ -23,7 +23,7 @@ def remove_substrings(input_set):
 
     return list(result_set)
 
-def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str = "seed_words.json", output_path_json: str = "generated_words.json", output_path_txt: str = "generated_words.txt"):
+def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str = "seed_words.json", description_path_json: str = "descriptions.json", output_path_json: str = "generated_words.json",  output_path_txt: str = "generated_words.txt"):
     model = Word2Vec.load(model_path)
     model = model.wv
     print("Word2Vec model loaded")
@@ -53,16 +53,19 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
         "unrefined": {}
     } # create 2 options, without refinement, and with refinement
 
-    all_words_txt = "# Generated Words\n\n"
+    all_words_txt = "# Generated n-grams\n\n"
+    descriptions = json.load(open(description_path_json, 'r'))
 
     for category in seed_words:
         filtered_words = [word for word in seed_words[category] if word in model.key_to_index]
         vectors = [model[word] for word in filtered_words]
         average_vector = np.mean(vectors, axis=0)
         
-        similar_ngrams = index.search(average_vector.reshape(1, -1), 100)
+        similar_ngrams = index.search(average_vector.reshape(1, -1), 400)
         similar_ngrams = [ngrams[i] for i in similar_ngrams[1][0]]
         similar_ngrams = remove_substrings(similar_ngrams)
+        for i in range(len(similar_ngrams)):
+            similar_ngrams[i] = similar_ngrams[i].replace("_", " ")
 
         all_words["unrefined"][category] = similar_ngrams
 
@@ -73,10 +76,10 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
         response = client.chat.completions.create(
             messages=[{
                 "role": "system",
-                "content": """Select the 150 most relevant keywords that should be included in this. Response JSON format: {"sorted_keywords": ["bigram1", "bigram2", ...]}"""
+                "content": """Select the 150 most relevant keywords that should be included in this. Response JSON format: {"sorted_keywords": ["ngram1", "ngram2", ...]}"""
             }, {
                 "role": "user",
-                "content": f"# Category: {category} sentiment from an American company \n\n# Bigrams:\n{json.dumps(similar_ngrams)}"
+                "content": f"# Category: {category} sentiment from an American company \n Category description: {descriptions[category]} \n\n# Bigrams:\n{json.dumps(similar_ngrams)}"
             }],
             model="gpt-4o",
             # temperature=0.0,
