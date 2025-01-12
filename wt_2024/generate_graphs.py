@@ -107,7 +107,7 @@ def main(csv_filename: str = "company_website_second_round_with_additional_firms
 
     with mp.Pool(mp.cpu_count()) as pool:
         for keyword_name, keyword_list in keywords.items():
-            pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name), callback=lambda _: print(f"Finished graphing {keyword_name}"))
+            pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name))
         pool.close()
         pool.join()
 
