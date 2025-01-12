@@ -1,3 +1,4 @@
 company_website_second_round_with_additional_firms.csv
 *.csv
 *.pickle
+*.DS_Store

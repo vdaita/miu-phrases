@@ -3,4 +3,7 @@
 *.npy
 *.json
 keyword_charts/
+graph_data/
 .env
+__pycache__/
+!requirements.txt
