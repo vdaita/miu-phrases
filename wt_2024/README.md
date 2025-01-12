@@ -16,4 +16,5 @@
 ```python remove_stopwords_from_csv.py```
 
 ## Produce the counts and graphs
+This will automatically save in ./graph_data and ./keyword_charts, so those folders should be created beforehand.
 ```python generate_graphs.py```
