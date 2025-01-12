@@ -31,14 +31,28 @@ def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, keywo
         keyword_term_count = propagate_int_value_forward(keyword_term_count)
         keyword_term_exists = propagate_int_value_forward(keyword_term_exists)
 
+        keyword_term_exists = keyword_term_exists.sum(axis=0)
+        keyword_term_exists_2d = pd.DataFrame(
+            [keyword_term_exists.values for _ in range(len(df))],
+            index=df.index,
+            columns=df.columns
+        )
+
         keyword_score = pd.DataFrame(0, index=df.index, columns=df.columns)
-        mask = (keyword_term_count > 0) & (keyword_term_exists > 0) & (total_words > 0)
-        keyword_score[mask] = (keyword_term_count[mask] * np.log(1 + (doc_counts_2d[mask] / keyword_term_exists[mask])) / total_words[mask])
+        mask = (keyword_term_count > 0) & (keyword_term_exists_2d > 0) & (total_words > 0)
+        keyword_score[mask] = (100 * keyword_term_count[mask] * np.log(1 + (doc_counts_2d[mask] / keyword_term_exists_2d[mask])) / total_words[mask])
+        # keyword_score[mask] = (keyword_term_count[mask] / total_words[mask])
+        # keyword_score[mask] = np.log(1 + (doc_counts_2d[mask] / keyword_term_exists_2d[mask]))
+        # print("Keyword score:\n", keyword_score[mask])
+        # print("Document counts:\n", doc_counts_2d[mask], "\nKeyword term exists:\n", keyword_term_exists_2d[mask])
 
         final_score_sum += keyword_score
+    # print("Finished calculating keyword term count:\n", keyword_term_count.sum(axis=0))
 
     tf_idf_total = final_score_sum.sum(axis=0)
+    # print("Finished calculating the sum of the TF-IDF scores for each year:\n", tf_idf_total)
     tf_idf_total = tf_idf_total / doc_counts
+    # print("Finished dividing by document counts:\n", tf_idf_total)
 
     year_sums = tf_idf_total.tolist()
 
@@ -105,11 +119,14 @@ def main(csv_filename: str = "company_website_second_round_with_additional_firms
     total_words = df.swifter.applymap(lambda x: len(str(x).split()) if isinstance(x, str) else 0)
     total_words = propagate_int_value_forward(total_words)
 
-    with mp.Pool(mp.cpu_count()) as pool:
-        for keyword_name, keyword_list in keywords.items():
-            pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name))
-        pool.close()
-        pool.join()
+    try:
+        with mp.Pool(mp.cpu_count()) as pool:
+            for keyword_name, keyword_list in keywords.items():
+                pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name))
+            pool.close()
+            pool.join()
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
     # with mp.Pool(mp.cpu_count()) as pool:
         # pool.starmap(graph_keywords, [(csv_filename, keyword_list, keyword_name) for keyword_name, keyword_list in keywords.items()])
