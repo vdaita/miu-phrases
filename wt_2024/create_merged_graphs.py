@@ -19,7 +19,7 @@ def graph_list(category_names, subset_title):
 
     plt.xlabel('Year')
     plt.ylabel('Average Keyword Count')
-    plt.title(f'Average Keyword Count by Year For Subset {subset_title}')
+    plt.title(f'Average TF-IDF Score by Year For Subset {subset_title}')
     plt.grid(True)
     plt.gcf().set_size_inches(18.5, 10.5)
     plt.legend()
