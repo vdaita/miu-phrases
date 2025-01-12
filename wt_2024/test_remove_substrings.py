@@ -1,5 +1,5 @@
 import unittest
-from generate_ngram_vectors import remove_substrings
+from generate_best_ngrams import remove_substrings
 
 # python -m unittest test_remove_substrings.py
 
