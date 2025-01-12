@@ -5,3 +5,5 @@
 keyword_charts/
 graph_data/
 .env
+
+!requirements.txt
