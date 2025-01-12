@@ -24,7 +24,7 @@ def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, keywo
 
     stringified_df = df.astype(str)
 
-    for keyword in tqdm(keywords):
+    for keyword in tqdm(keywords, position=mp.current_process()._identity[0] if mp.current_process()._identity else 0):
         keyword_term_count = stringified_df.apply(lambda x: x.str.count(keyword)).fillna(0)
         keyword_term_exists = stringified_df.apply(lambda x: x.str.contains(keyword)).astype(int)
         
@@ -105,9 +105,11 @@ def main(csv_filename: str = "company_website_second_round_with_additional_firms
     total_words = df.swifter.applymap(lambda x: len(str(x).split()) if isinstance(x, str) else 0)
     total_words = propagate_int_value_forward(total_words)
 
-    for keyword_name, keyword_list in keywords.items():
-        graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name)
-        print(f"Finished graphing {keyword_name}")
+    with mp.Pool(mp.cpu_count()) as pool:
+        for keyword_name, keyword_list in keywords.items():
+            pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, keyword_list, keyword_name), callback=lambda _: print(f"Finished graphing {keyword_name}"))
+        pool.close()
+        pool.join()
 
     # with mp.Pool(mp.cpu_count()) as pool:
         # pool.starmap(graph_keywords, [(csv_filename, keyword_list, keyword_name) for keyword_name, keyword_list in keywords.items()])
