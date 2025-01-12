@@ -13,15 +13,19 @@ from fire import Fire
 
 load_dotenv()
 
-def remove_substrings(input_set):
-    sorted_set = sorted(input_set, key=len)
-    result_set = set()
+def remove_substrings(input_list):
+    result_list = []
 
-    for string in sorted_set:
-        if not any(string in other for other in result_set):
-            result_set.add(string)
+    for string in input_list:
+        has_substring = False
+        for other_string in input_list:
+           if other_string in string and other_string != string:
+                has_substring = True
+                break
+        if not has_substring:
+            result_list.append(string)
 
-    return list(result_set)
+    return result_list
 
 def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str = "seed_words.json", description_path_json: str = "descriptions.json", output_path_json: str = "generated_words.json",  output_path_txt: str = "generated_words.txt"):
     model = Word2Vec.load(model_path)
