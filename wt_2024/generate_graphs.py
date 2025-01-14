@@ -6,7 +6,6 @@ from functools import partial
 from tqdm import tqdm
 import json
 from fire import Fire
-from nltk.corpus import stopwords
 import numpy as np
 import swifter
 
