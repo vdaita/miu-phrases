@@ -5,7 +5,9 @@ def append_strings_from_csv(input_csv="company_website_second_round_with_additio
     df = pd.read_csv(input_csv, header=None)
     with open(output_file, mode='a', encoding='utf-8') as outfile:
         for row in df.itertuples(index=False, name=None):
-            outfile.write(' '.join(map(str, row)) + '\n')
+            valid_strings = [item for item in row if isinstance(item, str)]
+            if valid_strings:
+                outfile.write(' '.join(valid_strings) + '\n')
 
 if __name__ == "__main__":
     fire.Fire(append_strings_from_csv)
