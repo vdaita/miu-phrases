@@ -1,7 +1,7 @@
 import pandas as pd
 import fire
 
-def append_strings_from_csv(input_csv="company_website_second_round_with_additional_firms_without_redundant.csv", output_file="corpus.txt"):
+def append_strings_from_csv(input_csv="company_website_second_round_with_additional_firms_without_redundant_cleaned.csv", output_file="corpus_cleaned.txt"):
     df = pd.read_csv(input_csv, header=None)
     with open(output_file, mode='a', encoding='utf-8') as outfile:
         for row in df.itertuples(index=False, name=None):

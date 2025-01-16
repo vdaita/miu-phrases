@@ -31,14 +31,14 @@ def batch_reader(file_path, batch_size=10000):
                 break
             yield batch
 
-def main(input_file: str = "company_website_second_round_with_additional_firms.csv", 
+def main(input_file: str = "corpus_cleaned.txt", 
          output_file: str = "ngram_model.model", 
          concept: str = "american",
         ):
     
     with open(input_file, "r") as f:
         corpus = f.read().split(" ")
-        corpus = [" ".join(corpus[i:i+30]) for i in range(0, len(corpus), 30)]
+        corpus = [" ".join([word for word in corpus[i:i+30] if len(word) < 10]) for i in tqdm(range(0, len(corpus), 30))]
         corpus = [line.lower().split() for line in corpus]
 
     
@@ -54,7 +54,7 @@ def main(input_file: str = "company_website_second_round_with_additional_firms.c
         sentences=bigram_corpus,
         vector_size=384,
         window=5,
-        min_count=5,  # Increased to reduce vocabulary size
+        min_count=25,  # Increased to reduce vocabulary size
         workers=10,  # Use all CPU cores
         batch_words=10000,  # Larger batch size
         callbacks=[TqdmCallback()],
