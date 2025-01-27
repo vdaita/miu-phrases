@@ -3,6 +3,8 @@
 *.npy
 *.json
 keyword_charts/
+keyword_charts_new_dataset/
+graph_data_new_dataset/
 graph_data/
 .env
 __pycache__/
