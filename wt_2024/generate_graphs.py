@@ -8,6 +8,7 @@ import json
 from fire import Fire
 import numpy as np
 import swifter
+from rapidfuzz import process, fuzz
 
 # df = pd.read_csv("about_us_second_round_with_additional_firms.csv", low_memory=False)
 
@@ -18,13 +19,17 @@ def propagate_int_value_forward(df):
     df.fillna(0, inplace=True) # fill the remaining np.nan with 0
     return df
 
+def fuzzy_count(text, keyword, threshold=80):
+    matches = process.extract(keyword, text.split(), scorer=fuzz.partial_ratio, score_cutoff=threshold)
+    return len(matches)  # Count the number of approximate matches
+
 def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, total_words_sum_2d, keywords, keyword_name, use_tf_idf_metric: bool = True):
     final_score_sum = pd.DataFrame(0, index=df.index, columns=df.columns)
 
     stringified_df = df.astype(str)
 
     for keyword in tqdm(keywords, position=mp.current_process()._identity[0] if mp.current_process()._identity else 0):
-        keyword_term_count = stringified_df.apply(lambda x: x.str.count(keyword)).fillna(0)
+        keyword_term_count = stringified_df.apply(lambda x: x.apply(lambda cell: fuzzy_count(cell, keyword))).fillna(0)
         keyword_term_exists = stringified_df.apply(lambda x: x.str.contains(keyword)).astype(int)
         
         keyword_term_count = propagate_int_value_forward(keyword_term_count)
