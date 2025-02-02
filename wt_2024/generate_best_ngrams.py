@@ -27,6 +27,84 @@ def remove_substrings(input_list):
 
     return result_list
 
+def get_phrase_vector(phrase, model):
+    """Get vector representation of a phrase using available n-grams."""
+    wv = model.wv
+    # Normalize and clean the phrase
+    words = phrase.lower().split()
+    word_vectors = []
+    used_ngrams = []
+    i = 0
+    
+    while i < len(words):
+        # Try trigrams first
+        if i < len(words) - 2:
+            trigram = f"{words[i]}_{words[i+1]}_{words[i+2]}"
+            if trigram in wv:
+                word_vectors.append(wv[trigram] * 1.5)  # Weight trigrams higher
+                used_ngrams.append(trigram)
+                i += 3
+                continue
+                
+        # Try bigrams
+        if i < len(words) - 1:
+            bigram = f"{words[i]}_{words[i+1]}"
+            if bigram in wv:
+                word_vectors.append(wv[bigram] * 1.2)  # Weight bigrams slightly higher
+                used_ngrams.append(bigram)
+                i += 2
+                continue
+        
+        # Fall back to unigrams
+        if words[i] in wv:
+            word_vectors.append(wv[words[i]])
+            used_ngrams.append(words[i])
+            i += 1
+        else:
+            # Handle unknown words by using subwords or skipping
+            subwords = words[i].split('-')  # Handle hyphenated words
+            subword_vectors = []
+            for subword in subwords:
+                if subword in wv:
+                    subword_vectors.append(wv[subword])
+            if subword_vectors:
+                word_vectors.append(np.mean(subword_vectors, axis=0))
+                used_ngrams.append(words[i])
+            i += 1
+
+    # Print debug info
+    print(f"Phrase: {phrase}")
+    print(f"Used n-grams: {used_ngrams}")
+
+    if not word_vectors:
+        return None
+
+    # Normalize the final vector
+    final_vector = np.mean(word_vectors, axis=0)
+    return final_vector / np.linalg.norm(final_vector)
+
+def get_most_similar_words(seed_words, model):
+    wv = model.wv
+    index = faiss.IndexFlatL2(384)
+
+    ngrams = []
+    ngram_embeddings = []
+    for ngram in wv.key_to_index:
+        ngrams.append(ngram)
+        ngram_embeddings.append(wv[ngram])
+
+    vectors = [get_phrase_vector(phrase, model) for phrase in seed_words]
+    vectors = [vector for vector in vectors if vector is not None]
+    average_vector = np.mean(vectors, axis=0)
+
+    similar_ngrams = index.search(average_vector.reshape(1, -1), 400)
+    similar_ngrams = [ngrams[i] for i in similar_ngrams[1][0]]
+    similar_ngrams = remove_substrings(similar_ngrams)
+    for i in range(len(similar_ngrams)):
+        similar_ngrams[i] = similar_ngrams[i].replace("_", " ")
+
+    return similar_ngrams
+
 def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str = "seed_words.json", description_path_json: str = "descriptions.json", output_path_json: str = "generated_words.json",  output_path_txt: str = "generated_words.txt"):
     model = Word2Vec.load(model_path)
     model = model.wv
@@ -61,8 +139,7 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
     descriptions = json.load(open(description_path_json, 'r'))
 
     for category in seed_words:
-        filtered_words = [word for word in seed_words[category] if word in model.key_to_index]
-        vectors = [model[word] for word in filtered_words]
+        vectors = [get_phrase_vector[word] for word in seed_words[category]]
         average_vector = np.mean(vectors, axis=0)
         
         similar_ngrams = index.search(average_vector.reshape(1, -1), 400)
@@ -108,4 +185,16 @@ def get_best_ngrams(model_path: str = "ngram_model.model", seed_words_path: str 
         f.write(all_words_txt)
 
 if __name__ == "__main__":
-    Fire(get_best_ngrams)
+    seed_words = json.load(open("chat_extracted_keywords.json", "r"))["direct_extracted"]["antiforeign"]
+    model = Word2Vec.load("ngram_model.model")
+
+    with open("chat_extracted_keywords_extended.json", "w+") as f:
+        json.dump(
+         {
+            "extracted_expanded": {
+                "antiforeign": get_most_similar_words(seed_words, model)
+            }
+         },
+         f
+        )
+    # Fire(get_best_ngrams)
