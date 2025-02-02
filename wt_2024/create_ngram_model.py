@@ -79,7 +79,7 @@ def main(input_file: str = "corpus_cleaned.txt",
         batch_words=10000,
         callbacks=[TqdmCallback()],
         sg=1,  # Skip-gram
-        epochs=5,  # Increased epochs
+        epochs=20,  # Increased epochs
         alpha=0.025,  # Initial learning rate
         min_alpha=0.0001  # Final learning rate
     )
@@ -88,6 +88,8 @@ def main(input_file: str = "corpus_cleaned.txt",
     
     # Save model
     model.save(output_file)
+
+    print("Index to key: ", model.wv.index_to_key[:50])
     
     # Test the model
     if concept in model.wv:
