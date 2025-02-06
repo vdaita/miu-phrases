@@ -5,6 +5,7 @@ from tqdm import tqdm
 import gensim
 import multiprocessing
 from itertools import islice
+from spacy import load
 import re
 
 class TqdmCallback(gensim.models.callbacks.CallbackAny2Vec):
@@ -30,7 +31,14 @@ def preprocess_text(text):
     text = ' '.join(text.split())
     return text
 
-def main(input_file: str = "corpus_cleaned.txt", 
+common_words = [
+    "in", "the", "and", "to", "of", "a", "i", "it", "is", "that", "on", "you", 
+    "this", "for", "with", "was", "but", "be", "as", "have", "at", "or", "are", 
+    "not", "from", "by", "an", "they", "we", "his", "her", "she", "he", "them", 
+    "my", "me"
+]
+
+def main(input_file: str = "mini_corpus.txt", 
          output_file: str = "ngram_model.model", 
          concept: str = "manufacturing",
         ):
@@ -53,35 +61,30 @@ def main(input_file: str = "corpus_cleaned.txt",
     
     print(f"Total words after crop: {len(words)}")
     print(f"'manufacturing' count after crop: {words.count('manufacturing')}")
-    
+
     # Create sentences
-    corpus = [words[i:i+30] for i in range(0, len(words), 30)]
+    corpus = [words[i:i+15] for i in tqdm(range(0, len(words), 15))]
     
     print("Training phrase models...")
     # Train bigram model
     bigram = Phrases(corpus, min_count=5, threshold=10)
     bigram_phraser = Phraser(bigram)
     
-    # Train trigram model on top of bigrams
-    trigram = Phrases(bigram_phraser[corpus], min_count=5, threshold=10)
-    trigram_phraser = Phraser(trigram)
-    
-    # Apply both models
-    processed_corpus = [trigram_phraser[bigram_phraser[sentence]] for sentence in tqdm(corpus)]
+    processed_corpus = [bigram_phraser[sentence] for sentence in tqdm(corpus)]
     
     print("Training Word2Vec model...")
     model = Word2Vec(
         sentences=processed_corpus,
         vector_size=384,
         window=10,  # Increased context window
-        min_count=10,  # Reduced to catch more words
+        min_count=30,  # Reduced to catch more words
         workers=multiprocessing.cpu_count(),
         batch_words=10000,
         callbacks=[TqdmCallback()],
         sg=1,  # Skip-gram
-        epochs=20,  # Increased epochs
+        epochs=10,  # Increased epochs
         alpha=0.025,  # Initial learning rate
-        min_alpha=0.0001  # Final learning rate
+        min_alpha=0.01  # Final learning rate
     )
     
     print(f"\nVocabulary size: {len(model.wv.key_to_index)}")
