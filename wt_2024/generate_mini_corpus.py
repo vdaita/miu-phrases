@@ -34,8 +34,15 @@ print("Split capitalization demo: ", "HelloWorld how is it going? HiAm fine. -->
 corpus = "\n".join(new_corpus)
 corpus = "\n".join([split_capitalization(line) for line in new_corpus])
 
+common_words = [
+    "in", "the", "and", "to", "of", "a", "i", "it", "is", "that", "on", "you", 
+    "this", "for", "with", "was", "but", "be", "as", "have", "at", "or", "are", 
+    "not", "from", "by", "an", "they", "we", "his", "her", "she", "he", "them", 
+    "my", "me"
+]
+
 words = corpus.split()
-words = [word for word in words if len(word) < 20]
+words = [word for word in words if len(word) < 20 and all(char.isalpha() for char in word) and word.lower() not in common_words]
 for i in tqdm(range(len(words))):
     if any(char.isdigit() for char in words[i]):
         words[i] = '[num]'

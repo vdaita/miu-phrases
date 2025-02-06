@@ -31,13 +31,6 @@ def preprocess_text(text):
     text = ' '.join(text.split())
     return text
 
-common_words = [
-    "in", "the", "and", "to", "of", "a", "i", "it", "is", "that", "on", "you", 
-    "this", "for", "with", "was", "but", "be", "as", "have", "at", "or", "are", 
-    "not", "from", "by", "an", "they", "we", "his", "her", "she", "he", "them", 
-    "my", "me"
-]
-
 def main(input_file: str = "mini_corpus.txt", 
          output_file: str = "ngram_model.model", 
          concept: str = "manufacturing",
