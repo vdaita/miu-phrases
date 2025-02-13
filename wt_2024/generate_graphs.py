@@ -8,6 +8,7 @@ import json
 from fire import Fire
 import numpy as np
 import swifter
+from rapidfuzz import process, fuzz
 
 # df = pd.read_csv("about_us_second_round_with_additional_firms.csv", low_memory=False)
 
@@ -18,14 +19,40 @@ def propagate_int_value_forward(df):
     df.fillna(0, inplace=True) # fill the remaining np.nan with 0
     return df
 
-def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, total_words_sum_2d, keywords, keyword_name, use_tf_idf_metric: bool = True):
+def vectorized_fuzzy_count(texts, keyword, threshold=80):
+    """Vectorized fuzzy count for a series of texts"""
+    # Pre-split all texts at once
+    split_texts = texts.str.split()
+    
+    # Apply fuzzy matching to each row's word list
+    def count_matches(words):
+        if not isinstance(words, list) or not words:
+            return 0
+        matches = process.extract(keyword, words, scorer=fuzz.partial_ratio, 
+                                score_cutoff=threshold, limit=None)
+        return len(matches)
+    
+    return split_texts.map(count_matches)
+
+def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, total_words_sum_2d, keywords, keyword_name, use_tf_idf_metric: bool = True, use_fuzzy_match: bool = False, use_binary: bool = False):
     final_score_sum = pd.DataFrame(0, index=df.index, columns=df.columns)
 
     stringified_df = df.astype(str)
 
     for keyword in tqdm(keywords, position=mp.current_process()._identity[0] if mp.current_process()._identity else 0):
-        keyword_term_count = stringified_df.apply(lambda x: x.str.count(keyword)).fillna(0)
-        keyword_term_exists = stringified_df.apply(lambda x: x.str.contains(keyword)).astype(int)
+        if use_fuzzy_match:
+            keyword_term_count = pd.DataFrame(
+                {col: vectorized_fuzzy_count(stringified_df[col], keyword) 
+                 for col in stringified_df.columns}, 
+                index=stringified_df.index
+            )
+        else:
+            keyword_term_count = stringified_df.apply(lambda x: x.str.count(keyword)).fillna(0)
+
+        if use_binary:
+            keyword_term_count = (keyword_term_count > 0).astype(int)
+
+        keyword_term_exists = (keyword_term_count > 0).astype(int)
         
         keyword_term_count = propagate_int_value_forward(keyword_term_count)
         keyword_term_exists = propagate_int_value_forward(keyword_term_exists)
@@ -76,6 +103,12 @@ def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, total
     if not(use_tf_idf_metric):
         keyword_name = f"{keyword_name}_simple_ratio"
 
+    if use_fuzzy_match:
+        keyword_name = f"{keyword_name}_fuzzy"
+
+    if use_binary:
+        keyword_name = f"{keyword_name}_binary"
+
     with open(f'graph_data/{keyword_name}.json', 'w') as f:
         json.dump(save_data, f)
 
@@ -89,7 +122,7 @@ def graph_keywords(df, doc_exists, doc_counts, doc_counts_2d, total_words, total
     plt.savefig(f'keyword_charts/{keyword_name}.png')
     # plt.show()
 
-def main(csv_filename: str = "company_website_second_round_with_additional_firms_without_redundant_cleaned.csv", keywords_file: str = "generated_words.json", use_tf_idf_metric: bool = True):
+def main(csv_filename: str = "company_website_second_round_with_additional_firms_without_redundant_cleaned.csv", keywords_file: str = "generated_words.json", use_tf_idf_metric: bool = True, use_fuzzy_match: bool = False, use_binary: bool = False):
     with open(keywords_file) as f:
         keywords_original = json.load(f)
     keywords = {}
@@ -135,10 +168,12 @@ def main(csv_filename: str = "company_website_second_round_with_additional_firms
         columns=df.columns
     )
 
+    df = df.swifter.applymap(lambda x: ''.join(filter(str.isalpha, str(x).lower())) if isinstance(x, str) else x)
+
     try:
         with mp.Pool(mp.cpu_count()) as pool:
             for keyword_name, keyword_list in keywords.items():
-                pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, total_words_sum_2d, keyword_list, keyword_name), kwds={"use_tf_idf_metric": use_tf_idf_metric})
+                pool.apply_async(graph_keywords, args=(df, doc_exists, doc_counts, doc_counts_2d, total_words, total_words_sum_2d, keyword_list, keyword_name), kwds={"use_tf_idf_metric": use_tf_idf_metric, "use_fuzzy_match": use_fuzzy_match, "use_binary": use_binary})
             pool.close()
             pool.join()
     except Exception as e:
